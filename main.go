@@ -22,6 +22,7 @@ func main() {
 	regionStartFlag := app.Flag("region-start", "region start").Default("1").Int()
 	regionEndFlag := app.Flag("region-end", "region end").Default("1000000000000").Int()
 	subPopFile := app.Flag("sub-pop", "sub population list").Default("").String()
+	chrom := app.Flag("chrom", "chromosome").Default("").String()
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	var subPopIndexMap map[int]bool
@@ -39,11 +40,15 @@ func main() {
 	p2arr := make([]float64, *maxlFlag)
 	p2counts := make([]int64, *maxlFlag)
 	var buffer []VCFRecord
+	var currentChromo string
 	for rec := range vcfChan {
 		if rec.Pos < *regionStartFlag || rec.Pos > *regionEndFlag {
 			break
 		}
-		if len(buffer) == 0 || rec.Pos-buffer[0].Pos < *maxlFlag {
+		if *chrom != "" && *chrom != rec.Chrom {
+			break
+		}
+		if (currentChromo == "" || currentChromo == rec.Chrom) && (len(buffer) == 0 || rec.Pos-buffer[0].Pos < *maxlFlag) {
 			buffer = append(buffer, rec)
 		} else {
 			compute(buffer, p2arr, p2counts, subPopIndexMap)
