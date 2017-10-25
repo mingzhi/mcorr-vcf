@@ -79,14 +79,22 @@ func main() {
 // Compute calculates correlation function.
 func compute(buffer []VCFRecord, p2arr []float64, p2counts []int64, indexMap map[int]bool) {
 	for i := 0; i < len(buffer); i++ {
-		nc := mcorr.NewNuclCov([]byte{'0', '1'})
+		nc := mcorr.NewNuclCov([]byte{'0', '1', '2', '3'})
 		if indexMap != nil {
 			for k := range indexMap {
-				nc.Add(buffer[0].GTs[k], buffer[i].GTs[k])
+				a := buffer[0].GTs[k]
+				b := buffer[i].GTs[k]
+				if a-'0' >= 0 && a-'0' <= 3 && b-'0' >= 0 && b-'0' <= 3 {
+					nc.Add(a, b)
+				}
 			}
 		} else {
 			for k := 0; k < len(buffer[0].GTs); k++ {
-				nc.Add(buffer[0].GTs[k], buffer[i].GTs[k])
+				a := buffer[0].GTs[k]
+				b := buffer[i].GTs[k]
+				if a-'0' >= 0 && a-'0' <= 3 && b-'0' >= 0 && b-'0' <= 3 {
+					nc.Add(a, b)
+				}
 			}
 		}
 		lag := buffer[i].Pos - buffer[0].Pos
@@ -133,6 +141,35 @@ func readVCF(filename string) (c chan VCFRecord) {
 					if t == "GT" {
 						inGT = true
 					} else if inGT {
+						phased := true
+						for _, gt := range t {
+							if gt == '/' {
+								phased = false
+								break
+							}
+						}
+						if phased {
+							for _, gt := range t {
+								if gt != '|' {
+									rec.GTs = append(rec.GTs, byte(gt))
+								}
+							}
+						} else {
+							var current byte
+							for _, gt := range t {
+								if gt == '/' {
+									continue
+								}
+								if current != 0 && current != byte(gt) {
+									current = 0
+									break
+								}
+								current = byte(gt)
+							}
+							if current != 0 {
+								rec.GTs = append(rec.GTs, current)
+							}
+						}
 						for _, gt := range t {
 							if gt != '|' {
 								rec.GTs = append(rec.GTs, byte(gt))
