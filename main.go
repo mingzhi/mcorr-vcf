@@ -104,8 +104,10 @@ func compute(buffer []VCFRecord, p2arr []float64, p2counts []int64, indexMap map
 		}
 		lag := buffer[i].Pos - buffer[0].Pos
 		xy, n := nc.P11(0)
-		p2arr[lag] += xy / float64(n)
-		p2counts[lag]++
+		if n > len(buffer[0].GTs)/2 {
+			p2arr[lag] += xy / float64(n)
+			p2counts[lag]++
+		}
 	}
 }
 
