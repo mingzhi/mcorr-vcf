@@ -46,7 +46,7 @@ func main() {
 			break
 		}
 		if *chrom != "" && *chrom != rec.Chrom {
-			break
+			continue
 		}
 		if (currentChromo == "" || currentChromo == rec.Chrom) && (len(buffer) == 0 || rec.Pos-buffer[0].Pos < *maxlFlag) {
 			buffer = append(buffer, rec)
